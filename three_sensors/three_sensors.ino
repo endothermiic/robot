@@ -164,7 +164,7 @@ void loop() {
 
   //Case VII: [1 0 1] || [1 1 1]
   else{
-    //stpp
+    //stop
     POS_M1->setSpeed(0);
     NEG_M4->setSpeed(0); 
     NEG_M3->setSpeed(0);

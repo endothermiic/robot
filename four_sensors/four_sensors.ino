@@ -2,10 +2,10 @@
 #include <Adafruit_MotorShield.h>
 
 //define IR pins 
-#define IR_L1 A0
-#define IR_L2 A1
-#define IR_R3 A2
-#define IR_R4 A3
+#define IR_L A0
+#define IR_M A1
+#define IR_M_UP A2
+#define IR_R A3
 
 //define motor pins
 #define POS_M1_TERMINAL 1
@@ -26,22 +26,20 @@ Adafruit_DCMotor *NEG_M4 = AFMS.getMotor(NEG_M4_TERMINAL);
 hp_BH1750 lightSensor; 
 int bright = 0;
 
-// PID control system variables
-float Kp = 0; 
-float Ki = 0; 
-float Kd = 0; 
-int P, I, D;
-int lastError = 0; 
+//define speeds 
+const int high = 255;
+const int mod = 100; 
+const int low = 25;
 
 void setup() {
   //setup board
   AFMS.begin();
   
   // set pins to input
-  pinMode(IR_L1, INPUT);
-  pinMode(IR_L2, INPUT);
-  pinMode(IR_R3, INPUT);
-  pinMode(IR_R4, INPUT);
+  pinMode(IR_L, INPUT);
+  pinMode(IR_M, INPUT);
+  pinMode(IR_M_UP, INPUT);
+  pinMode(IR_R, INPUT);
 
   //reset motors and set to output
   POS_M1->setSpeed(0);
@@ -64,36 +62,17 @@ void loop() {
   int lux = lightSensor.getLux();
  
   // get readings from IR sensors 
-  int ir_l1 = analogRead(IR_L1);
-  int ir_l2 = analogRead(IR_L2);
-  int ir_r3 = analogRead(IR_R3);
-  int ir_r4 = analogRead(IR_R4);
+  int readings[] = {analogRead(IR_L), analogRead(IR_M), analogRead(IR_M_UP), analogRead(IR_R)};
 
-// if low, white ; if high, black 
- if (ir_l1 < 50){
-   ir_l1 = 0;
- }
- else {
-   ir_l1 = 1;
- }
- if (ir_l2 < 50){
-   ir_l2 = 0;
- }
- else{
-   ir_l2 = 1;
- } 
- if (ir_r3 < 50){
-    ir_r3 = 0;
- }
- else{
-    ir_r3 = 1;
- }
-if (ir_r4 < 50){
-    ir_r4 = 0;
-}
-else{
-    ir_r4 = 1;
-}
+// if low, white ; if high, black - conv analog to digital
+  for (int i = 0; i < 4; i++){
+    if (readings[i] < 50){
+    readings[i] = 0;
+    } 
+    else {
+    readings[i] = 1;
+    }
+  }
 
 
   //start signal 
@@ -103,44 +82,226 @@ else{
 
   while (bright){
 
-  //bang bang control algorithm
-  if (ir_left == 0 && ir_right == 0){
-    //move forward
-    POS_M1->setSpeed(255);
-    POS_M1->run(FORWARD);
-    POS_M2->setSpeed(255);
-    POS_M2->run(FORWARD);
-    NEG_M3->setSpeed(255);
-    NEG_M3->run(FORWARD);
-    NEG_M4->setSpeed(255);
-    NEG_M4->run(FORWARD); 
-  }
-  else if (ir_left == 0 && ir_right == 1){
-    //turn right
-    POS_M2->setSpeed(255);
-    POS_M2->run(FORWARD);
-    NEG_M3->setSpeed(255);
-    NEG_M3->run(FORWARD);
-    NEG_M4->setSpeed(50);
-    POS_M1->setSpeed(50);
-  }
-  else if (ir_right == 0 && ir_left == 1){
-    //turn left
-    POS_M1->setSpeed(255);
+  //Case I: [0 0 0 0]
+  if (readings[0] == 0 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
+    //rotate CW and move forward a little until left or right sensors detect black
+    //back wheel turns faster than front
+    POS_M1->setSpeed(high);
     POS_M1->run(FORWARD); 
-    NEG_M4->setSpeed(255);
+    NEG_M4->setSpeed(high);
     NEG_M4->run(FORWARD); 
-    NEG_M3->setSpeed(50);
-    POS_M2->setSpeed(50);
+    NEG_M3->setSpeed(low);
+    NEG_M3->run(FOWARD);
+    POS_M2->setSpeed(low);
+    POS_M2->run(FOWARD);
   }
-  else{
-    //rev down and stop
-      POS_M1->setSpeed(0);
+  //Case II: [1 0 0 0]
+  else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
+    //sharp turn left
+    //can toggle this depending on performance - may need to set speeds to 0 of negM3 and posm2
+    POS_M1->setSpeed(high);
+    POS_M1->run(FORWARD); 
+    NEG_M4->setSpeed(high);
+    NEG_M4->run(FORWARD); 
+    NEG_M3->setSpeed(low);
+    NEG_M3->run(BACKWARD);
+    POS_M2->setSpeed(low);
+    POS_M2->run(BACKWARD);
+  }
+
+  //Case III: [0 1 0 0]
+  else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0){
+    //go straight, but slow down as likely approaching curve
+    for (int i = high, i > low, i-=15){
+        POS_M1->setSpeed(i);
+        POS_M1->run(FORWARD); 
+        NEG_M4->setSpeed(i);
+        NEG_M4->run(FORWARD); 
+        NEG_M3->setSpeed(i);
+        NEG_M3->run(FORWARD);
+        POS_M2->setSpeed(i);
+        POS_M2->run(FORWARD);
+    }
+    
+  }
+
+  //Case IV: [0 0 1 0]
+  else if (readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
+      // keep going straight
+        POS_M1->setSpeed(high);
+        POS_M1->run(FORWARD); 
+        NEG_M4->setSpeed(high);
+        NEG_M4->run(FORWARD); 
+        NEG_M3->setSpeed(high);
+        NEG_M3->run(FOWARD);
+        POS_M2->setSpeed(high);
+        POS_M2->run(FOWARD);
+    }
+
+  //Case V: [0 0 0 1]
+  else if (readings[0] == 0 && readings[1] == 0 && readings[2] == 0 && readings[3] == 1){
+      //sharp turn right 
+      POS_M1->setSpeed(high);
+      POS_M1->run(FORWARD); 
+      NEG_M4->setSpeed(high);
+      NEG_M4->run(FORWARD); 
+      NEG_M3->setSpeed(low);
+      NEG_M3->run(BACKWARD);
+      POS_M2->setSpeed(low);
+      POS_M2->run(BACKWARD);
+    }
+
+  //Case VI: [1 1 0 0]
+else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0) {
+    // slow turn left
+    for (int i = low; i < high; i += 25) {
+    POS_M1->setSpeed(i);
+    POS_M1->run(FORWARD); 
+    NEG_M4->setSpeed(i);
+    NEG_M4->run(FORWARD); 
+    // (If you want the inside wheels to not turn opposite way, uncomment this section)
+    NEG_M3->setSpeed(low);
+    NEG_M3->run(FORWARD);
+    POS_M2->setSpeed(low);
+    POS_M2->run(FORWARD); 
+    }
+}
+
+  // Case VII: [1 0 1 0]
+    else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
+      //sharper left
+      POS_M1->setSpeed(high);
+      POS_M1->run(FORWARD); 
+      NEG_M4->setSpeed(high);
+      NEG_M4->run(FORWARD); 
+      //can toggle to 0 as well 
+      NEG_M3->setSpeed(low);
+      NEG_M3->run(FORWARD);
+      POS_M2->setSpeed(low);
+      POS_M2->run(FORWARD);
+    }
+
+    // Case VIII: [0 1 1 0]
+    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
+      //sharper left
+      POS_M1->setSpeed(mod);
+      POS_M1->run(FORWARD); 
+      NEG_M4->setSpeed(mod);
+      NEG_M4->run(FORWARD); 
+      //can toggle to 0 as well 
+      NEG_M3->setSpeed(low);
+      NEG_M3->run(FORWARD);
+      POS_M2->setSpeed(low);
+      POS_M2->run(FORWARD);
+    }
+    
+    // Case IX: [0 1 1 1]
+    else if(readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1){
+        //slow right turn
+      POS_M2->setSpeed(high);
+      POS_M2->run(FORWARD); 
+      NEG_M3->setSpeed(high);
+      NEG_M3->run(FORWARD); 
+      NEG_M4->setSpeed(low);
+      NEG_M4->run(FORWARD);
+      POS_M1->setSpeed(low);
+      POS_M1->run(FORWARD);
+    }
+
+    // Case X: [1 1 1 0]
+    else if(readings[0] == 1 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
+        //slow left turn 
+        POS_M2->setSpeed(low);
+      POS_M2->run(FORWARD); 
+      NEG_M3->setSpeed(low);
+      NEG_M3->run(FORWARD); 
+      NEG_M4->setSpeed(high);
+      NEG_M4->run(FORWARD);
+      POS_M1->setSpeed(high);
+      POS_M1->run(FORWARD);
+    }
+
+    // Case XI: [1 1 0 1]
+    else if(readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1){
+      //go straight but slower
+      POS_M2->setSpeed(high - 50);
+      POS_M2->run(FORWARD); 
+      NEG_M3->setSpeed(high - 50);
+      NEG_M3->run(FORWARD); 
+      NEG_M4->setSpeed(high - 50);
+      NEG_M4->run(FORWARD);
+      POS_M1->setSpeed(high - 50);
+      POS_M1->run(FORWARD);
+    }
+
+    // Case XII: [0 0 1 1]
+    else if(readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1){
+        // slow turn right
+        for (int i = low; i < high; i += 25) {
+        POS_M2->setSpeed(i);
+        POS_M2->run(FORWARD); 
+        NEG_M3->setSpeed(i);
+        NEG_M3->run(FORWARD); 
+        // (If you want the inside wheels to not turn opposite way, uncomment this section)
+        NEG_M4->setSpeed(low);
+        NEG_M4->run(FORWARD);
+        POS_M1->setSpeed(low);
+        POS_M1->run(FORWARD); 
+    }
+
+    // Case XIII: [0 1 0 1]
+    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1) {
+      //sharper right
+      POS_M2->setSpeed(high);
+      POS_M2->run(FORWARD); 
+      NEG_M3->setSpeed(high);
+      NEG_M3->run(FORWARD); 
+      //can toggle to 0 as well 
+      NEG_M4->setSpeed(low);
+      NEG_M4->run(FORWARD);
+      POS_M1->setSpeed(low);
+      POS_M1->run(FORWARD);
+    }
+
+    // Case XIV: [0 1 1 1]
+    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1) {
+      // Rotate CCW and move forward a little until left or right sensors detect black
+      // Back wheel turns faster than front
+      POS_M1->setSpeed(low);
+      POS_M1->run(FORWARD); 
+      NEG_M4->setSpeed(low);
+      NEG_M4->run(FORWARD); 
+      NEG_M3->setSpeed(high);
+      NEG_M3->run(FORWARD);
+      POS_M2->setSpeed(high);
+      POS_M2->run(FORWARD);
+    }
+
+    // Case XV: [1 0 1 1]
+    else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1) {
+      // move forward slowly?
+      //toggle tmr
+      POS_M1->setSpeed(mod);
+      POS_M1->run(FORWARD); 
+      NEG_M4->setSpeed(mod);
+      NEG_M4->run(FORWARD); 
+      NEG_M3->setSpeed(mod);
+      NEG_M3->run(FORWARD);
+      POS_M2->setSpeed(mod);
+      POS_M2->run(FORWARD);
+    }
+
+    // Case XVI: [1 1 1 1]
+     else {
+      //go straight but slower
       POS_M2->setSpeed(0);
+      POS_M2->run(FORWARD); 
       NEG_M3->setSpeed(0);
+      NEG_M3->run(FORWARD); 
       NEG_M4->setSpeed(0);
-      //exit loop when robot comes to a stop
-      bright = 0;
+      NEG_M4->run(FORWARD);
+      POS_M1->setSpeed(0);
+      POS_M1->run(FORWARD);
+    }
   }
-}
-}
+  }
