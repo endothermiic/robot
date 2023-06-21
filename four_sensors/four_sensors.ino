@@ -91,12 +91,12 @@ void loop() {
     NEG_M4->setSpeed(high);
     NEG_M4->run(FORWARD); 
     NEG_M3->setSpeed(low);
-    NEG_M3->run(FOWARD);
+    NEG_M3->run(FORWARD);
     POS_M2->setSpeed(low);
-    POS_M2->run(FOWARD);
+    POS_M2->run(FORWARD);
   }
   //Case II: [1 0 0 0]
-  else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
+  if (readings[0] == 1 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
     //sharp turn left
     //can toggle this depending on performance - may need to set speeds to 0 of negM3 and posm2
     POS_M1->setSpeed(high);
@@ -110,9 +110,9 @@ void loop() {
   }
 
   //Case III: [0 1 0 0]
-  else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0){
+  if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0){
     //go straight, but slow down as likely approaching curve
-    for (int i = high, i > low, i-=15){
+    for (int i = high; i > low; i-=15){
         POS_M1->setSpeed(i);
         POS_M1->run(FORWARD); 
         NEG_M4->setSpeed(i);
@@ -126,20 +126,20 @@ void loop() {
   }
 
   //Case IV: [0 0 1 0]
-  else if (readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
+  if (readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
       // keep going straight
         POS_M1->setSpeed(high);
         POS_M1->run(FORWARD); 
         NEG_M4->setSpeed(high);
         NEG_M4->run(FORWARD); 
         NEG_M3->setSpeed(high);
-        NEG_M3->run(FOWARD);
+        NEG_M3->run(FORWARD);
         POS_M2->setSpeed(high);
-        POS_M2->run(FOWARD);
+        POS_M2->run(FORWARD);
     }
 
   //Case V: [0 0 0 1]
-  else if (readings[0] == 0 && readings[1] == 0 && readings[2] == 0 && readings[3] == 1){
+  if (readings[0] == 0 && readings[1] == 0 && readings[2] == 0 && readings[3] == 1){
       //sharp turn right 
       POS_M1->setSpeed(high);
       POS_M1->run(FORWARD); 
@@ -152,7 +152,7 @@ void loop() {
     }
 
   //Case VI: [1 1 0 0]
-else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0) {
+if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 0) {
     // slow turn left
     for (int i = low; i < high; i += 25) {
     POS_M1->setSpeed(i);
@@ -168,7 +168,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
 }
 
   // Case VII: [1 0 1 0]
-    else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
+  if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 0) {
       //sharper left
       POS_M1->setSpeed(high);
       POS_M1->run(FORWARD); 
@@ -182,7 +182,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case VIII: [0 1 1 0]
-    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
+if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
       //sharper left
       POS_M1->setSpeed(mod);
       POS_M1->run(FORWARD); 
@@ -196,7 +196,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
     
     // Case IX: [0 1 1 1]
-    else if(readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1){
+  if(readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1){
         //slow right turn
       POS_M2->setSpeed(high);
       POS_M2->run(FORWARD); 
@@ -209,7 +209,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case X: [1 1 1 0]
-    else if(readings[0] == 1 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
+  if(readings[0] == 1 && readings[1] == 1 && readings[2] == 1 && readings[3] == 0){
         //slow left turn 
         POS_M2->setSpeed(low);
       POS_M2->run(FORWARD); 
@@ -222,7 +222,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XI: [1 1 0 1]
-    else if(readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1){
+  if(readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1){
       //go straight but slower
       POS_M2->setSpeed(high - 50);
       POS_M2->run(FORWARD); 
@@ -235,7 +235,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XII: [0 0 1 1]
-    else if(readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1){
+  if(readings[0] == 0 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1){
         // slow turn right
         for (int i = low; i < high; i += 25) {
         POS_M2->setSpeed(i);
@@ -250,7 +250,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XIII: [0 1 0 1]
-    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1) {
+  if (readings[0] == 0 && readings[1] == 1 && readings[2] == 0 && readings[3] == 1) {
       //sharper right
       POS_M2->setSpeed(high);
       POS_M2->run(FORWARD); 
@@ -264,7 +264,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XIV: [0 1 1 1]
-    else if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1) {
+  if (readings[0] == 0 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1) {
       // Rotate CCW and move forward a little until left or right sensors detect black
       // Back wheel turns faster than front
       POS_M1->setSpeed(low);
@@ -278,7 +278,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XV: [1 0 1 1]
-    else if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1) {
+  if (readings[0] == 1 && readings[1] == 0 && readings[2] == 1 && readings[3] == 1) {
       // move forward slowly?
       //toggle tmr
       POS_M1->setSpeed(mod);
@@ -292,7 +292,7 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
 
     // Case XVI: [1 1 1 1]
-     else {
+  if (readings[0] == 1 && readings[1] == 1 && readings[2] == 1 && readings[3] == 1) {
       //go straight but slower
       POS_M2->setSpeed(0);
       POS_M2->run(FORWARD); 
@@ -305,3 +305,4 @@ else if (readings[0] == 1 && readings[1] == 1 && readings[2] == 0 && readings[3]
     }
   }
   }
+}
