@@ -81,6 +81,7 @@ void loop() {
   }
 
   while (bright){
+    serial.print ("start");
 
   //Case I: [0 0 0 0]
   if (readings[0] == 0 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
@@ -94,6 +95,7 @@ void loop() {
     NEG_M3->run(FORWARD);
     POS_M2->setSpeed(low);
     POS_M2->run(FORWARD);
+     serial.print ("fwd");
   }
   //Case II: [1 0 0 0]
   if (readings[0] == 1 && readings[1] == 0 && readings[2] == 0 && readings[3] == 0){
